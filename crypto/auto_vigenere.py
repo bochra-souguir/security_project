@@ -71,74 +71,19 @@ def get_factors(n):
     return factors
 
 
-def estimate_key_length(ciphertext, max_length=20):
-    """
-    Estime la longueur de la clé avec la méthode Kasiski
-    
-    Principe:
-    1. Trouver les séquences répétées
-    2. Calculer les distances entre répétitions
-    3. Trouver le PGCD des distances
-    
-    Args:
-        ciphertext (str): Texte chiffré
-        max_length (int): Longueur maximale à tester
-    
-    Returns:
-        int: Longueur estimée de la clé
-    """
-    # Trouver les séquences répétées
-    repeated = find_repeated_sequences(ciphertext)
-    
-    if not repeated:
-        # Fallback : essayer avec l'IC
-        return estimate_key_length_ic(ciphertext, max_length)
-    
-    # Compter les facteurs de toutes les distances
-    factor_counts = Counter()
-    
-    for seq, positions in repeated.items():
-        distances = calculate_distances(positions)
-        
-        for dist in distances:
-            factors = get_factors(dist)
-            for f in factors:
-                if f <= max_length:
-                    factor_counts[f] += 1
-    
-    if not factor_counts:
-        return estimate_key_length_ic(ciphertext, max_length)
-    
-    # Le facteur le plus commun est probablement la longueur
-    most_common_factor = factor_counts.most_common(1)[0][0]
-    
-    return most_common_factor
-
-
+# crypto/auto_vigenere.py - Ajoutez cette fonction
 def estimate_key_length_ic(ciphertext, max_length=20):
     """
-    Estime la longueur de la clé avec l'indice de coïncidence
-    
-    Pour chaque longueur testée:
-    1. Diviser le texte en sous-textes
-    2. Calculer l'IC moyen
-    3. La bonne longueur donne un IC proche de 0.065
-    
-    Args:
-        ciphertext (str): Texte chiffré
-        max_length (int): Longueur maximale à tester
-    
-    Returns:
-        int: Longueur estimée de la clé
+    Estime la longueur de clé par analyse IC
     """
     from .detector import calculate_ic
     
     text_clean = ''.join(c.upper() for c in ciphertext if c.isalpha())
     
     best_length = 1
-    best_ic = 0
+    best_ic_diff = float('inf')
     
-    for length in range(2, max_length + 1):
+    for length in range(1, max_length + 1):
         # Diviser en sous-textes
         subtexts = [''] * length
         for i, char in enumerate(text_clean):
@@ -147,12 +92,28 @@ def estimate_key_length_ic(ciphertext, max_length=20):
         # Calculer IC moyen
         avg_ic = sum(calculate_ic(sub) for sub in subtexts) / length
         
-        # Chercher l'IC le plus proche de 0.065 (anglais)
-        if avg_ic > best_ic:
-            best_ic = avg_ic
+        # L'IC idéal pour anglais est ~0.065
+        ic_diff = abs(avg_ic - 0.065)
+        
+        if ic_diff < best_ic_diff:
+            best_ic_diff = ic_diff
             best_length = length
     
     return best_length
+
+# Modifiez estimate_key_length pour utiliser IC comme fallback
+def estimate_key_length(ciphertext, max_length=20):
+    """
+    Combine Kasiski + IC pour meilleure estimation
+    """
+    # D'abord Kasiski
+    repeated = find_repeated_sequences(ciphertext, min_length=3, max_length=6)
+    
+    if not repeated or len(repeated) < 3:
+        # Pas assez de répétitions → utiliser IC
+        return estimate_key_length_ic(ciphertext, max_length)
+    
+  
 
 
 def crack_vigenere_subtext(subtext):

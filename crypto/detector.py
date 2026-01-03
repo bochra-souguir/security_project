@@ -7,41 +7,30 @@ from collections import Counter
 import math
 
 
+
 def calculate_ic(text):
     """
-    Calcule l'indice de coïncidence d'un texte
-    
-    L'IC mesure la probabilité que deux lettres prises au hasard
-    soient identiques. Pour un texte en anglais : IC ≈ 0.065-0.075
-    Pour un texte aléatoire : IC ≈ 0.038
-    
-    Args:
-        text (str): Texte à analyser
-    
-    Returns:
-        float: Indice de coïncidence (0-1)
-    
-    Formule:
-        IC = Σ ni(ni-1) / N(N-1)
-        où ni = fréquence de la lettre i
-            N = nombre total de lettres
+    Calcule l'indice de coïncidence (IC)
     """
-    # Nettoyer : garder uniquement les lettres
+    # Protection contre None
+    if text is None:
+        return 0.0
+    
+    # Nettoyer le texte
     text_clean = ''.join(c.upper() for c in text if c.isalpha())
     n = len(text_clean)
     
     if n < 2:
         return 0.0
     
-    # Compter les fréquences
-    freq = Counter(text_clean)
+    # Calcul simple qui marche
+    freq = {}
+    for char in text_clean:
+        freq[char] = freq.get(char, 0) + 1
     
-    # Calculer IC
-    ic = sum(count * (count - 1) for count in freq.values())
-    ic /= (n * (n - 1))
-    
-    return ic
-
+    # Formule IC
+    ic_sum = sum(count * (count - 1) for count in freq.values())
+    return ic_sum / (n * (n - 1))
 
 def detect_cipher_type(ciphertext):
     """

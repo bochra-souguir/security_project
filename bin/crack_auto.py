@@ -243,7 +243,7 @@ if __name__ == '__main__':
         print("\n\n⚠️  Interruption utilisateur (Ctrl+C)")
         sys.exit(0)
     except Exception as e:
-        print(f"\n❌ Erreur fatale : {e}")
+        print(f"\n[X] Erreur fatale : {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
